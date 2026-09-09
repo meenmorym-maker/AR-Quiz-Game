@@ -263,6 +263,13 @@
 
   <div class="card">
     <h2>⚙️ ตั้งค่าเกม</h2>
+    <label>📚 เลือกชุดคำถาม</label>
+    <select id="questionSetSelect" style="margin-bottom: 14px;">
+      <option value="all" selected>เล่นทั้งหมด 30 ข้อ (สุ่ม)</option>
+      <option value="set1">ชุดที่ 1 (ข้อ 1-10)</option>
+      <option value="set2">ชุดที่ 2 (ข้อ 11-20)</option>
+      <option value="set3">ชุดที่ 3 (ข้อ 21-30)</option>
+    </select>
     <div class="settings-row">
       <div>
         <label>⏱️ เวลาเล่น (นาที)</label>
@@ -365,7 +372,7 @@
 import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 /* ================= STATE ================= */
-let questions = [
+const ALL_QUESTIONS = [
   {
     "id": 1,
     "text": "ข้อมูลข้อไหนที่บอกเพื่อนใหม่ได้อย่างปลอดภัย? (ข้อมูลส่วนตัว)",
@@ -1352,6 +1359,14 @@ function updateStartBtn(){
 resetAnswerForm();
 renderQList();
 
+document.getElementById('questionSetSelect').addEventListener('change', e=>{
+  const val = e.target.value;
+  if(val === 'set1') questions = ALL_QUESTIONS.slice(0, 10);
+  else if(val === 'set2') questions = ALL_QUESTIONS.slice(10, 20);
+  else if(val === 'set3') questions = ALL_QUESTIONS.slice(20, 30);
+  else questions = [...ALL_QUESTIONS];
+  renderQList();
+});
 document.getElementById('durationSelect').addEventListener('change', e=>{ settings.duration = Number(e.target.value); });
 document.getElementById('musicSelect').addEventListener('change', e=>{ settings.musicOn = e.target.value==='on'; updateMuteIcon(); });
 document.getElementById('gameModeSelect').addEventListener('change', e=>{
