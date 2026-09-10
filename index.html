@@ -215,7 +215,14 @@
   </div>
 
   <div class="card">
-    <h2>✏️ เพิ่มคำถาม</h2>
+    <h2>✏️ เพิ่มคำถาม (เข้าไปยังชุดคำถามของคุณ)</h2>
+    <div id="targetSetWrap" style="background:#fbf7ff; padding:10px; border-radius:12px; border:2px solid #eee0f7; margin-bottom:14px;">
+      <label style="margin-top:0;">เลือกชุดคำถามที่จะบันทึก</label>
+      <div style="display:flex; gap:10px;">
+        <select id="targetSetSelect" style="flex:1;"></select>
+        <button type="button" class="btn btn-purple" id="createNewSetBtn" style="padding:10px 14px;">➕ สร้างชุดใหม่</button>
+      </div>
+    </div>
     <label>คำถาม (พิมพ์ข้อความ และ/หรือ แนบรูปภาพก็ได้)</label>
     <input type="text" id="qInput" placeholder="เช่น 5 + 3 = เท่าไร? (จะเว้นว่างไว้ก็ได้ถ้าใช้รูปภาพแทน)">
     <div class="q-img-wrap">
@@ -263,13 +270,9 @@
 
   <div class="card">
     <h2>⚙️ ตั้งค่าเกม</h2>
-    <label>📚 เลือกชุดคำถาม</label>
-    <select id="questionSetSelect" style="margin-bottom: 14px;">
-      <option value="all" selected>เล่นทั้งหมด 30 ข้อ (สุ่ม)</option>
-      <option value="set1">ชุดที่ 1 (ข้อ 1-10)</option>
-      <option value="set2">ชุดที่ 2 (ข้อ 11-20)</option>
-      <option value="set3">ชุดที่ 3 (ข้อ 21-30)</option>
-    </select>
+    <label>📚 เลือกชุดคำถาม (ติ๊กเพื่อผสมหลายชุดได้)</label>
+    <div id="setCheckboxesWrap" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; background:#fbf7ff; padding:12px; border-radius:12px; border:2px solid #eee0f7;">
+    </div>
     <div class="settings-row">
       <div>
         <label>⏱️ เวลาเล่น (นาที)</label>
@@ -1299,16 +1302,121 @@ document.getElementById('saveQBtn').addEventListener('click', ()=>{
   if(!qText && !qImage){ alert('กรุณาพิมพ์คำถาม หรือแนบรูปภาพคำถามอย่างน้อยหนึ่งอย่าง'); return; }
   if(validAnswers.length<2){ alert('กรุณาใส่คำตอบอย่างน้อย 2 ตัวเลือก (ข้อความหรือรูปภาพ)'); return; }
   if(!validAnswers.some(r=>r.correct)){ alert('กรุณาเลือกคำตอบที่ถูกต้อง 1 ข้อ (กดปุ่ม ✅)'); return; }
-  questions.push({
+  
+  const targetSel = document.getElementById('targetSetSelect');
+  if(!targetSel || !targetSel.value){
+    alert('กรุณาสร้างชุดคำถามใหม่ก่อนทำการบันทึกคำถามครับ');
+    return;
+  }
+  
+  const targetSet = customSets.find(s => s.id === targetSel.value);
+  if(!targetSet) return;
+
+  targetSet.questions.push({
     id: Q_UID++,
     text: qText,
     image: qImage,
+    isDefault: false,
     answers: validAnswers.map(r=>({ id:r.uid, text:r.text.trim(), correct:r.correct, image:r.image||null }))
   });
+  
+  saveCustomSets();
   document.getElementById('qInput').value='';
   resetAnswerForm();
-  renderQList();
+  
+  renderSetCheckboxes();
+  updateQuestionsFromActiveSets();
 });
+
+
+function saveCustomSets(){ localStorage.setItem('ar_custom_sets', JSON.stringify(customSets)); }
+
+function renderSetCheckboxes(){
+  const wrap = document.getElementById('setCheckboxesWrap');
+  if(!wrap) return;
+  let html = '';
+  const allSets = [...DEFAULT_SETS, ...customSets];
+  allSets.forEach(s => {
+    const isChecked = activeSetIds.includes(s.id) ? 'checked' : '';
+    const delBtn = s.isDefault ? '' : `<button type="button" class="rm-answer" data-delset="${s.id}" style="width:28px;height:28px;font-size:12px;padding:0;" title="ลบชุดคำถาม">🗑</button>`;
+    html += `
+      <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer; color:#2b2140; font-weight:400; font-family:'Mali';">
+        <input type="checkbox" class="set-checkbox" value="${s.id}" ${isChecked} style="width:18px;height:18px;accent-color:var(--purple);">
+        <span style="flex:1;">${s.name} (${s.questions.length} ข้อ)</span>
+        ${delBtn}
+      </label>
+    `;
+  });
+  wrap.innerHTML = html;
+  
+  wrap.querySelectorAll('.set-checkbox').forEach(cb => {
+    cb.addEventListener('change', e => {
+      if(e.target.checked) activeSetIds.push(e.target.value);
+      else activeSetIds = activeSetIds.filter(id => id !== e.target.value);
+      updateQuestionsFromActiveSets();
+    });
+  });
+
+  wrap.querySelectorAll('[data-delset]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const sid = e.target.dataset.delset;
+      if(confirm('ต้องการลบชุดคำถามนี้ทิ้งอย่างถาวรใช่หรือไม่?')){
+        customSets = customSets.filter(s => s.id !== sid);
+        activeSetIds = activeSetIds.filter(id => id !== sid);
+        saveCustomSets();
+        renderSetCheckboxes();
+        renderTargetSetSelect();
+        updateQuestionsFromActiveSets();
+      }
+    });
+  });
+}
+
+function renderTargetSetSelect(){
+  const sel = document.getElementById('targetSetSelect');
+  if(!sel) return;
+  sel.innerHTML = '';
+  if(customSets.length === 0){
+    sel.innerHTML = '<option value="">(ยังไม่มีชุดคำถามของคุณ - กดปุ่มสร้างชุดใหม่)</option>';
+  } else {
+    customSets.forEach(s => {
+      sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    });
+  }
+}
+
+function updateQuestionsFromActiveSets(){
+  let qs = [];
+  const allSets = [...DEFAULT_SETS, ...customSets];
+  activeSetIds.forEach(sid => {
+    const s = allSets.find(x => x.id === sid);
+    if(s) qs = qs.concat(s.questions);
+  });
+  questions = qs;
+  renderQList();
+}
+
+if(document.getElementById('createNewSetBtn')){
+  document.getElementById('createNewSetBtn').addEventListener('click', ()=>{
+    const name = prompt('ตั้งชื่อชุดคำถามใหม่:');
+    if(name && name.trim()){
+      const newSet = {
+        id: 'custom_' + Date.now(),
+        name: name.trim(),
+        questions: [],
+        isDefault: false
+      };
+      customSets.push(newSet);
+      activeSetIds.push(newSet.id);
+      saveCustomSets();
+      renderSetCheckboxes();
+      renderTargetSetSelect();
+      document.getElementById('targetSetSelect').value = newSet.id;
+      updateQuestionsFromActiveSets();
+    }
+  });
+}
 
 function renderQList(){
   const list = document.getElementById('qlist');
@@ -1343,9 +1451,12 @@ function renderQList(){
   list.querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', e=>{
       const id = Number(e.target.dataset.del);
-      questions = questions.filter(q=>q.id!==id);
-      renderQList();
-      updateStartBtn();
+      customSets.forEach(s => {
+        s.questions = s.questions.filter(q => q.id !== id);
+      });
+      saveCustomSets();
+      updateQuestionsFromActiveSets();
+      renderSetCheckboxes();
     });
   });
   updateStartBtn();
@@ -1357,16 +1468,10 @@ function updateStartBtn(){
   else { btn.disabled=true; hint.textContent = 'เพิ่มคำถามอย่างน้อย 1 ข้อ (มีคำตอบอย่างน้อย 2 ตัวเลือก และเลือกคำตอบที่ถูก 1 ข้อ)'; }
 }
 resetAnswerForm();
-renderQList();
+renderTargetSetSelect();
+renderSetCheckboxes();
+updateQuestionsFromActiveSets();
 
-document.getElementById('questionSetSelect').addEventListener('change', e=>{
-  const val = e.target.value;
-  if(val === 'set1') questions = ALL_QUESTIONS.slice(0, 10);
-  else if(val === 'set2') questions = ALL_QUESTIONS.slice(10, 20);
-  else if(val === 'set3') questions = ALL_QUESTIONS.slice(20, 30);
-  else questions = [...ALL_QUESTIONS];
-  renderQList();
-});
 document.getElementById('durationSelect').addEventListener('change', e=>{ settings.duration = Number(e.target.value); });
 document.getElementById('musicSelect').addEventListener('change', e=>{ settings.musicOn = e.target.value==='on'; updateMuteIcon(); });
 document.getElementById('gameModeSelect').addEventListener('change', e=>{
