@@ -214,6 +214,63 @@
     <div class="subtitle">AI Motion Quiz • วิ่งไปแตะคำตอบที่ถูกต้องด้วยร่างกายจริง 🏃‍♀️🏃‍♂️</div>
   </div>
 
+    <!-- BULK IMPORT CARD -->
+  <div class="card" style="border: 2.5px dashed var(--purple); background: #faf5ff;">
+    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" id="toggleBulkBtn">
+      <h2 style="margin:0; color:var(--purple); display:flex; align-items:center; gap:8px;">
+        <span>📋</span> วางข้อความสร้างคำถามทีเดียว (Bulk Import)
+      </h2>
+      <span id="bulkToggleIcon" style="font-size:14px; font-weight:bold; color:var(--purple); background:#eee0f7; padding:6px 12px; border-radius:10px;">▲ ซ่อนกล่อง</span>
+    </div>
+    
+    <div id="bulkContentWrap" style="margin-top:14px;">
+      <p style="font-size:13px; color:#6b5f8a; margin:0 0 10px; line-height:1.6;">
+        💡 <b>วิธีใช้ง่ายที่สุด:</b> คัดลอกข้อความคำถามทั้งชุดจาก Word หรือแชทมาวางที่นี่ได้เลย ระบบจะแยกข้อ ก./ข./ค. และเฉลยให้อัตโนมัติทันที ไม่ต้องพิมพ์ทีละข้อ!
+      </p>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:13px; margin-bottom:4px; font-weight:600;">🎯 รูปแบบการสร้างชุดคำถาม:</label>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:14px;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal;">
+            <input type="radio" name="bulkTargetMode" value="autoSets" checked style="accent-color:var(--purple); width:18px; height:18px;">
+            ตรวจจับและแยกชุดอัตโนมัติ (เช่น คำถามชุดที่ 1, ชุดที่ 2)
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:normal;">
+            <input type="radio" name="bulkTargetMode" value="singleSet" style="accent-color:var(--purple); width:18px; height:18px;">
+            รวมทั้งหมดเป็น 1 ชุดใหม่
+          </label>
+        </div>
+      </div>
+
+      <div id="bulkSingleSetNameWrap" style="display:none; margin-bottom:10px;">
+        <label style="font-size:13px; margin-bottom:4px; font-weight:600;">ตั้งชื่อชุดคำถามใหม่:</label>
+        <input type="text" id="bulkSetNameInput" placeholder="เช่น ชุดคำถามความปลอดภัยไซเบอร์ ป.1-3" value="">
+      </div>
+
+      <textarea id="bulkTextInput" rows="8" style="width:100%; border:2px solid #eee0f7; border-radius:14px; padding:12px; font-family:'Mali',sans-serif; font-size:13px; resize:vertical; box-sizing:border-box;" placeholder="วางข้อความที่นี่ เช่น:
+
+คำถามชุดที่ 1
+1. ข้อมูลข้อไหนที่บอกเพื่อนใหม่ได้อย่างปลอดภัย? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) ชื่อเล่นและสีที่ชอบ
+ข. (ตรงกลาง/ชูมือ) รหัสผ่านโทรศัพท์
+ค. (เอียงขวา) เลขบัตรประชาชน 13 หลัก
+เฉลย: ก. (เอียงซ้าย)
+
+2. รหัสผ่านแบบไหนที่ปลอดภัยที่สุด?
+ก. (เอียงซ้าย) 123456
+ข. (ตรงกลาง/ชูมือ) Cat#Run2026
+ค. (เอียงขวา) วันเดือนปีเกิด
+เฉลย: ข. (ตรงกลาง/ชูมือ)"></textarea>
+
+      <div class="row-buttons" style="margin-top:10px;">
+        <button type="button" class="btn btn-purple" id="doBulkImportBtn">🚀 นำเข้าและสร้างชุดคำถามทันที</button>
+        <button type="button" class="btn btn-blue" id="loadSampleBtn">📄 ใส่ตัวอย่างคำถาม 3 ชุด (30 ข้อ)</button>
+        <button type="button" class="btn btn-grey" id="clearBulkBtn">🧹 ล้างข้อความ</button>
+      </div>
+      <div id="bulkStatusMsg" style="margin-top:10px; font-size:14px; font-family:'Mali'; display:none;"></div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>✏️ เพิ่มคำถาม (เข้าไปยังชุดคำถามของคุณ)</h2>
     <div id="targetSetWrap" style="background:#fbf7ff; padding:10px; border-radius:12px; border:2px solid #eee0f7; margin-bottom:14px;">
@@ -1127,6 +1184,23 @@ const ALL_QUESTIONS = [
     ]
   }
 ];
+const DEFAULT_SETS = [
+  { id: 'set1', name: 'ชุดที่ 1: ความปลอดภัย & ข้อมูลส่วนตัว (10 ข้อ)', isDefault: true, questions: ALL_QUESTIONS.slice(0, 10).map(q=>({...q, isDefault:true})) },
+  { id: 'set2', name: 'ชุดที่ 2: รหัสผ่าน & ข้อมูลลับ (10 ข้อ)', isDefault: true, questions: ALL_QUESTIONS.slice(10, 20).map(q=>({...q, isDefault:true})) },
+  { id: 'set3', name: 'ชุดที่ 3: ภัยออนไลน์ & การป้องกัน (10 ข้อ)', isDefault: true, questions: ALL_QUESTIONS.slice(20, 30).map(q=>({...q, isDefault:true})) }
+];
+
+let customSets = [];
+try {
+  const saved = localStorage.getItem('ar_custom_sets');
+  if (saved) customSets = JSON.parse(saved);
+} catch (e) {
+  console.warn('Error loading customSets from localStorage', e);
+}
+
+let activeSetIds = ['set1', 'set2', 'set3', ...customSets.map(s => s.id)];
+let questions = [];
+
 let ANSWER_UID = 100, Q_UID = 100;
 let answerRowsState = []; 
 let qImage = null;
@@ -1443,7 +1517,7 @@ function renderQList(){
         </div>
       </div>
       <div class="qactions">
-        <button class="icon-btn" data-del="${q.id}">🗑️</button>
+        ${q.isDefault ? '<span style="font-size:12px; color:#9c93b8; padding:4px 8px; background:#f0eaf7; border-radius:8px;">🔒 ค่าเริ่มต้น</span>' : `<button class="icon-btn" data-del="${q.id}" title="ลบข้อนี้">🗑️</button>`}
       </div>
     `;
     list.appendChild(div);
@@ -1467,6 +1541,414 @@ function updateStartBtn(){
   if(questions.length>=1){ btn.disabled=false; hint.textContent = `พร้อมเล่น! มีคำถามทั้งหมด ${questions.length} ข้อ 🎈`; }
   else { btn.disabled=true; hint.textContent = 'เพิ่มคำถามอย่างน้อย 1 ข้อ (มีคำตอบอย่างน้อย 2 ตัวเลือก และเลือกคำตอบที่ถูก 1 ข้อ)'; }
 }
+
+/* ================= BULK IMPORT LOGIC ================= */
+function parseBulkQuestions(rawText) {
+  const lines = rawText.split('\n').map(l => l.trim());
+  const sets = [];
+  let currentSet = null;
+  let currentQ = null;
+
+  function ensureSet(name) {
+    if (!currentSet) {
+      currentSet = {
+        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        name: name || 'ชุดคำถามนำเข้า',
+        questions: [],
+        isDefault: false
+      };
+      sets.push(currentSet);
+    } else if (name && currentSet.questions.length > 0) {
+      currentSet = {
+        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        name: name,
+        questions: [],
+        isDefault: false
+      };
+      sets.push(currentSet);
+    } else if (name) {
+      currentSet.name = name;
+    }
+  }
+
+  function commitCurrentQ() {
+    if (!currentQ) return;
+    if (currentQ.answers.length >= 2) {
+      if (!currentQ.answers.some(a => a.correct)) {
+        if (currentQ.correctChoiceIdx !== undefined && currentQ.answers[currentQ.correctChoiceIdx]) {
+          currentQ.answers[currentQ.correctChoiceIdx].correct = true;
+        } else {
+          currentQ.answers[0].correct = true;
+        }
+      }
+      delete currentQ.correctChoiceIdx;
+      ensureSet();
+      currentSet.questions.push(currentQ);
+    }
+    currentQ = null;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+
+    // Detect Set Title: e.g. "คำถามชุดที่ 1", "ชุดที่ 2"
+    const setMatch = line.match(/^(?:คำถาม)?ชุดที่\s*([0-9]+|[^\n\r]+)/i);
+    if (setMatch && !line.match(/^[0-9]+[\.\)]/) && !line.match(/^[กขคงABCDabcd][\.\)]/)) {
+      commitCurrentQ();
+      const setName = line.trim();
+      currentSet = {
+        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        name: setName,
+        questions: [],
+        isDefault: false
+      };
+      sets.push(currentSet);
+      continue;
+    }
+
+    // Detect Question: e.g. "1. ข้อมูลข้อไหน...", "ข้อ 1. ...", "1) ..."
+    const qMatch = line.match(/^(?:ข้อ\s*)?([0-9]+)[\.\)]\s*(.+)/);
+    if (qMatch) {
+      commitCurrentQ();
+      currentQ = {
+        id: Q_UID++,
+        text: qMatch[2].trim(),
+        image: null,
+        isDefault: false,
+        answers: [],
+        correctChoiceIdx: undefined
+      };
+      continue;
+    }
+
+    // Detect Choices: ก., ข., ค., ง. or A., B., C., D.
+    const choiceMatch = line.match(/^([กขคงABCDabcd])[\.\)]\s*(.+)/);
+    if (choiceMatch && currentQ) {
+      const text = line;
+      const ansId = currentQ.answers.length + 1;
+      currentQ.answers.push({
+        id: ansId,
+        text: text,
+        image: null,
+        correct: false
+      });
+      continue;
+    }
+
+    // Detect Answer/เฉลย: e.g. "เฉลย: ก. (เอียงซ้าย)", "เฉลย: ข", "ตอบ: ค"
+    const ansMatch = line.match(/^(?:เฉลย|ตอบ|คำตอบ|เฉลยคำตอบ)\s*[:：]?\s*(.+)/i);
+    if (ansMatch && currentQ) {
+      const ansStr = ansMatch[1].trim();
+      const cleaned = ansStr.replace(/^[(\s]+/, '');
+      const firstChar = cleaned.charAt(0);
+      let matchIdx = -1;
+      if (firstChar === 'ก' || firstChar === 'A' || firstChar === 'a' || firstChar === '1') matchIdx = 0;
+      else if (firstChar === 'ข' || firstChar === 'B' || firstChar === 'b' || firstChar === '2') matchIdx = 1;
+      else if (firstChar === 'ค' || firstChar === 'C' || firstChar === 'c' || firstChar === '3') matchIdx = 2;
+      else if (firstChar === 'ง' || firstChar === 'D' || firstChar === 'd' || firstChar === '4') matchIdx = 3;
+
+      if (matchIdx >= 0) {
+        if (currentQ.answers[matchIdx]) {
+          currentQ.answers.forEach((a, idx) => a.correct = (idx === matchIdx));
+        } else {
+          currentQ.correctChoiceIdx = matchIdx;
+        }
+      }
+      continue;
+    }
+
+    // If continuation of question text or previous choice
+    if (currentQ) {
+      if (currentQ.answers.length === 0) {
+        currentQ.text += ' ' + line;
+      } else {
+        currentQ.answers[currentQ.answers.length - 1].text += ' ' + line;
+      }
+    }
+  }
+
+  commitCurrentQ();
+  return sets.filter(s => s.questions.length > 0);
+}
+
+const toggleBulkBtn = document.getElementById('toggleBulkBtn');
+const bulkContentWrap = document.getElementById('bulkContentWrap');
+const bulkToggleIcon = document.getElementById('bulkToggleIcon');
+if (toggleBulkBtn && bulkContentWrap) {
+  let isBulkOpen = true;
+  toggleBulkBtn.addEventListener('click', () => {
+    isBulkOpen = !isBulkOpen;
+    bulkContentWrap.style.display = isBulkOpen ? 'block' : 'none';
+    bulkToggleIcon.textContent = isBulkOpen ? '▲ ซ่อนกล่อง' : '▼ เปิดกล่องวางข้อความ';
+  });
+}
+
+document.querySelectorAll('input[name="bulkTargetMode"]').forEach(radio => {
+  radio.addEventListener('change', e => {
+    const singleWrap = document.getElementById('bulkSingleSetNameWrap');
+    if (singleWrap) {
+      singleWrap.style.display = e.target.value === 'singleSet' ? 'block' : 'none';
+    }
+  });
+});
+
+const sampleQuestionsText = `คำถามชุดที่ 1
+1. ข้อมูลข้อไหนที่บอกเพื่อนใหม่ได้อย่างปลอดภัย? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) ชื่อเล่นและสีที่ชอบ
+ข. (ตรงกลาง/ชูมือ) รหัสผ่านโทรศัพท์
+ค. (เอียงขวา) เลขบัตรประชาชน 13 หลัก
+เฉลย: ก. (เอียงซ้าย)
+
+2. รหัสผ่าน (Password) แบบไหนที่ปลอดภัยและเดายากที่สุด? (รหัสผ่าน)
+ก. (เอียงซ้าย) 123456
+ข. (ตรงกลาง/ชูมือ) Cat#Run2026
+ค. (เอียงขวา) วันเดือนปีเกิดตัวเอง
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+3. มีคนในเกมออนไลน์ชวนคุยและขอนัดเจอที่สวนสาธารณะ ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ชวนเพื่อนไปด้วยกัน
+ข. (ตรงกลาง/ชูมือ) แอบไปหาคนเดียวเงียบๆ
+ค. (เอียงขวา) ปฏิเสธทันที และรีบไปบอกคุณพ่อคุณแม่
+เฉลย: ค. (เอียงขวา)
+
+4. ข้อมูลข้อไหนห้ามโพสต์ลงบนอินเทอร์เน็ตเด็ดขาด? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) วันเกิดของสัตว์เลี้ยง
+ข. (ตรงกลาง/ชูมือ) ที่อยู่บ้านและเบอร์โทรคุณแม่
+ค. (เอียงขวา) การบ้านวิชาวาดเขียน
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+5. ถ้าเพื่อนสนิทขอรหัสผ่านเกม ควรทำอย่างไร? (รหัสผ่าน)
+ก. (เอียงซ้าย) ปฏิเสธสุภาพ บอกว่าต้องเก็บเป็นความลับ
+ข. (ตรงกลาง/ชูมือ) บอกทันทีเพราะเป็นเพื่อนรัก
+ค. (เอียงขวา) เขียนใส่กระดาษแจกทั้งห้อง
+เฉลย: ก. (เอียงซ้าย)
+
+6. มีข้อความเด้งขึ้นมาว่า "คุณคือผู้โชคดี ได้รับของเล่นฟรี กดเลย!" ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) รีบกดรับของรางวัลทันที
+ข. (ตรงกลาง/ชูมือ) พิมพ์ส่งต่อให้เพื่อนทุกคน
+ค. (เอียงขวา) ไม่กด และรีบเรียกผู้ใหญ่มาดู
+เฉลย: ค. (เอียงขวา)
+
+7. สิ่งใดที่เปรียบเหมือน "กุญแจบ้านดิจิทัล" ห้ามให้ใครยืมเด็ดขาด? (รหัสผ่าน)
+ก. (เอียงซ้าย) รหัสผ่าน (Password)
+ข. (ตรงกลาง/ชูมือ) ดินสอและยางลบ
+ค. (เอียงขวา) กระเป๋านักเรียน
+เฉลย: ก. (เอียงซ้าย)
+
+8. ถ้ามีคนส่งรูปน่ากลัวหรือข้อความแปลกๆ มาขู่ ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ส่งรูปตอบกลับไป
+ข. (ตรงกลาง/ชูมือ) ปิดหน้าจอ และรีบแจ้งครูหรือพ่อแม่ทันที
+ค. (เอียงขวา) แอบดูคนเดียวเงียบๆ
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+9. ถ้าถ่ายรูปตัวเองลงโซเชียล สิ่งใดที่ไม่ควรให้เห็นชัดเจน? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) รองเท้าคู่โปรด
+ข. (ตรงกลาง/ชูมือ) รอยยิ้มสดใส
+ค. (เอียงขวา) ป้ายชื่อจริงและตราโรงเรียน
+เฉลย: ค. (เอียงขวา)
+
+10. เมื่อเล่นคอมพิวเตอร์ที่โรงเรียนเสร็จแล้ว ต้องทำสิ่งใดเสมอ? (รหัสผ่าน)
+ก. (เอียงซ้าย) กดออกจากระบบ (Log out) ทุกครั้ง
+ข. (ตรงกลาง/ชูมือ) เดินออกจากห้องทันที
+ค. (เอียงขวา) ดึงปลั๊กไฟออก
+เฉลย: ก. (เอียงซ้าย)
+
+คำถามชุดที่ 2
+1. สิ่งใดต่อไปนี้เป็น "ความลับสุดยอด" ห้ามบอกเพื่อนในเกม? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) การ์ตูนเรื่องที่ชอบดู
+ข. (ตรงกลาง/ชูมือ) รหัสผ่านเข้าบัญชีเกม
+ค. (เอียงขวา) ไอศกรีมรสโปรด
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+2. ใครคือคนที่สามารถรู้รหัสผ่านของเราได้? (รหัสผ่าน)
+ก. (เอียงซ้าย) เพื่อนในห้องเรียน
+ข. (ตรงกลาง/ชูมือ) คนแปลกหน้าที่คุยสนุก
+ค. (เอียงขวา) คุณพ่อคุณแม่หรือผู้ปกครอง
+เฉลย: ค. (เอียงขวา)
+
+3. คนในเกมบอกว่า "ถ้าบอกเบอร์โทรแม่ จะเติมเหรียญเกมให้ฟรี" ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ปฏิเสธและไม่บอกเด็ดขาด
+ข. (ตรงกลาง/ชูมือ) บอกเบอร์โทรทันทีเพราะอยากได้เหรียญ
+ค. (เอียงขวา) ไปถามเบอร์เพื่อนมาบอกแทน
+เฉลย: ก. (เอียงซ้าย)
+
+4. การตั้งชื่อผู้เล่น (Username) ในเกมออนไลน์ ข้อใดปลอดภัยที่สุด? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) ชื่อจริงและนามสกุลจริง
+ข. (ตรงกลาง/ชูมือ) ใช้ฉายาหรือชื่อสมมุติน่ารักๆ
+ค. (เอียงขวา) เบอร์โทรศัพท์ของตัวเอง
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+5. รหัสผ่านข้อใดที่ "ไม่ควรนำมาตั้ง" มากที่สุด? (รหัสผ่าน)
+ก. (เอียงซ้าย) ตัวอักษรผสมตัวเลข
+ข. (ตรงกลาง/ชูมือ) คำศัพท์ภาษาอังกฤษ
+ค. (เอียงขวา) เบอร์โทรศัพท์หรือวันเกิดตัวเอง
+เฉลย: ค. (เอียงขวา)
+
+6. หากมีลิงก์แปลกๆ ส่งมาจากคนที่ไม่รู้จัก ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ห้ามกดเปิดลิงก์เด็ดขาด
+ข. (ตรงกลาง/ชูมือ) รีบกดเปิดดูทันที
+ค. (เอียงขวา) ส่งต่อให้เพื่อนทุกคนช่วยดู
+เฉลย: ก. (เอียงซ้าย)
+
+7. ข้อใดคือข้อมูลส่วนตัวที่สามารถบอกคุณครูได้ แต่ไม่ควรบอกคนแปลกหน้าบนเน็ต? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) วิชาที่ชอบเรียน
+ข. (ตรงกลาง/ชูมือ) ข้อมูลที่อยู่บ้านและเบอร์ติดต่อผู้ปกครอง
+ค. (เอียงขวา) สัตว์เลี้ยงที่บ้าน
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+8. บนคอมพิวเตอร์โรงเรียน เมื่อมีกล่องข้อความถามว่า "จำรหัสผ่านหรือไม่" ควรเลือกอะไร? (รหัสผ่าน)
+ก. (เอียงซ้าย) จำรหัสผ่านตลอดไป
+ข. (ตรงกลาง/ชูมือ) ให้เพื่อนช่วยกดจำ
+ค. (เอียงขวา) ไม่จำรหัสผ่าน (Never save)
+เฉลย: ค. (เอียงขวา)
+
+9. การเปิดเผยตำแหน่งที่อยู่ปัจจุบัน (Location) ตลอดเวลา ปลอดภัยหรือไม่? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ไม่ปลอดภัย เพราะคนร้ายอาจตามมาได้
+ข. (ตรงกลาง/ชูมือ) ปลอดภัยมาก ใครๆ ก็ทำกัน
+ค. (เอียงขวา) ปลอดภัยเพราะดูเท่ดี
+เฉลย: ก. (เอียงซ้าย)
+
+10. เมื่อเจอเรื่องไม่สบายใจบนหน้าจอ ใครคือที่พึ่งแรกที่ดีที่สุด? (ภัยออนไลน์)
+ก. (เอียงซ้าย) คนแปลกหน้าในแชต
+ข. (ตรงกลาง/ชูมือ) คุณพ่อคุณแม่และคุณครู
+ค. (เอียงขวา) สัตว์เลี้ยงที่บ้าน
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+คำถามชุดที่ 3
+1. เลขประจำตัวประชาชน 13 หลัก มีความสำคัญอย่างไร? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) เอาไว้แลกไอเทมในเกม
+ข. (ตรงกลาง/ชูมือ) เอาไว้แจกให้เพื่อนๆ รู้จักเรา
+ค. (เอียงขวา) เป็นข้อมูลสำคัญเฉพาะตัว ห้ามแชร์ลงเน็ต
+เฉลย: ค. (เอียงขวา)
+
+2. หากสงสัยว่ามีคนแอบรู้รหัสผ่านของเรา ควรทำอย่างไรเป็นอันดับแรก? (รหัสผ่าน)
+ก. (เอียงซ้าย) รีบเปลี่ยนรหัสผ่านใหม่ทันที
+ข. (ตรงกลาง/ชูมือ) เลิกเล่นคอมพิวเตอร์ไปตลอดชีวิต
+ค. (เอียงขวา) ทักไปต่อว่าทุกคน
+เฉลย: ก. (เอียงซ้าย)
+
+3. มีคนแปลกหน้าทักแชตมาบอกว่า "เป็นเพื่อนของพ่อแม่ ให้ตามไปหา" ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) รีบเดินตามไปทันที
+ข. (ตรงกลาง/ชูมือ) ไม่เชื่อ และรีบไปถามพ่อแม่หรือครูก่อน
+ค. (เอียงขวา) บอกที่อยู่บ้านให้เขามารับ
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+4. ข้อมูลใดต่อไปนี้จัดเป็น "ข้อมูลทั่วไป" ที่บอกเพื่อนๆ ได้อย่างปลอดภัย? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) รหัสผ่านตู้เซฟ
+ข. (ตรงกลาง/ชูมือ) เลขสมุดบัญชีธนาคาร
+ค. (เอียงขวา) ขนมและผลไม้ที่ชอบกิน
+เฉลย: ค. (เอียงขวา)
+
+5. การตั้งรหัสผ่านด้วยเลข 000000 ดีหรือไม่ เพราะเหตุใด? (รหัสผ่าน)
+ก. (เอียงซ้าย) ไม่ดี เพราะคนอื่นเดาง่ายและไม่ปลอดภัย
+ข. (ตรงกลาง/ชูมือ) ดีมาก เพราะกดง่ายดี
+ค. (เอียงขวา) ดีมาก เพราะตัวเลขสวย
+เฉลย: ก. (เอียงซ้าย)
+
+6. หากเจอคนพิมพ์ล้อเลียนหรือใช้คำหยาบคายใส่เราในเกม ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) พิมพ์ด่ากลับด้วยคำหยาบกว่าเดิม
+ข. (ตรงกลาง/ชูมือ) กดบล็อก (Block) และแจ้งผู้ใหญ่
+ค. (เอียงขวา) นั่งร้องไห้คนเดียวเงียบๆ
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+7. ถ้านักเรียนปกป้องข้อมูลส่วนตัวได้ดี จะเกิดผลอย่างไร? (ข้อมูลส่วนตัว)
+ก. (เอียงซ้าย) คอมพิวเตอร์จะเครื่องใหม่ขึ้น
+ข. (ตรงกลาง/ชูมือ) เล่นเกมเก่งขึ้นทันที
+ค. (เอียงขวา) ตัวเราจะปลอดภัยจากคนไม่หวังดี
+เฉลย: ค. (เอียงขวา)
+
+8. ทำไมเราจึงต้องมีรหัสผ่านสำหรับเข้าเครื่องหรือโทรศัพท์? (รหัสผ่าน)
+ก. (เอียงซ้าย) ป้องกันคนอื่นมาขโมยข้อมูลส่วนตัว
+ข. (ตรงกลาง/ชูมือ) ทำให้แบตเตอรี่หมดช้าลง
+ค. (เอียงขวา) เพิ่มเสียงลำโพงให้ดังขึ้น
+เฉลย: ก. (เอียงซ้าย)
+
+9. เมื่อพบเห็นวิดีโอน่ากลัวหรือไม่เหมาะสมบน YouTube ควรทำอย่างไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) ดูต่อจนจบเพื่อความสนุก
+ข. (ตรงกลาง/ชูมือ) ปิดคลิปทันที แล้วบอกคุณครูหรือผู้ปกครอง
+ค. (เอียงขวา) กดแชร์ให้เพื่อนๆ ในห้องดู
+เฉลย: ข. (ตรงกลาง/ชูมือ)
+
+10. กฎเหล็กข้อสำคัญที่สุดในการใช้อินเทอร์เน็ตอย่างปลอดภัยคืออะไร? (ภัยออนไลน์)
+ก. (เอียงซ้าย) เชื่อทุกข้อความที่ส่งมา
+ข. (ตรงกลาง/ชูมือ) ยอมบอกรหัสผ่านเพื่อให้ได้เพื่อนใหม่
+ค. (เอียงขวา) คิดก่อนคลิก ไม่บอกข้อมูลลับ และปรึกษาผู้ใหญ่เสมอ
+เฉลย: ค. (เอียงขวา)`;
+
+const loadSampleBtn = document.getElementById('loadSampleBtn');
+if (loadSampleBtn) {
+  loadSampleBtn.addEventListener('click', () => {
+    document.getElementById('bulkTextInput').value = sampleQuestionsText;
+    const msg = document.getElementById('bulkStatusMsg');
+    msg.style.display = 'block';
+    msg.style.color = '#2d8a55';
+    msg.textContent = '📄 ใส่ตัวอย่างคำถาม 3 ชุด (30 ข้อ) เรียบร้อยแล้ว! สามารถกดปุ่ม "🚀 นำเข้าและสร้างชุดคำถามทันที" ได้เลยครับ';
+  });
+}
+
+const clearBulkBtn = document.getElementById('clearBulkBtn');
+if (clearBulkBtn) {
+  clearBulkBtn.addEventListener('click', () => {
+    document.getElementById('bulkTextInput').value = '';
+    const msg = document.getElementById('bulkStatusMsg');
+    msg.style.display = 'none';
+  });
+}
+
+const doBulkImportBtn = document.getElementById('doBulkImportBtn');
+if (doBulkImportBtn) {
+  doBulkImportBtn.addEventListener('click', () => {
+    const raw = document.getElementById('bulkTextInput').value.trim();
+    const statusMsg = document.getElementById('bulkStatusMsg');
+    if (!raw) {
+      alert('กรุณาวางข้อความคำถามลงในช่องก่อนกดนำเข้าครับ');
+      return;
+    }
+    const parsedSets = parseBulkQuestions(raw);
+    if (parsedSets.length === 0) {
+      alert('ไม่พบข้อคำถามที่ตรงตามรูปแบบ กรุณาตรวจสอบว่ามีหมายเลขข้อ เช่น "1. คำถาม" และตัวเลือก "ก.", "ข.", "ค." หรือไม่');
+      return;
+    }
+
+    const mode = document.querySelector('input[name="bulkTargetMode"]:checked')?.value || 'autoSets';
+    let addedCount = 0;
+    let setsCount = 0;
+
+    if (mode === 'singleSet') {
+      const customName = document.getElementById('bulkSetNameInput').value.trim() || `ชุดคำถามนำเข้า (${new Date().toLocaleDateString('th-TH')})`;
+      let allQs = [];
+      parsedSets.forEach(s => allQs = allQs.concat(s.questions));
+      const singleSet = {
+        id: 'custom_' + Date.now(),
+        name: customName,
+        questions: allQs,
+        isDefault: false
+      };
+      customSets.push(singleSet);
+      activeSetIds.push(singleSet.id);
+      addedCount = allQs.length;
+      setsCount = 1;
+    } else {
+      parsedSets.forEach(s => {
+        customSets.push(s);
+        activeSetIds.push(s.id);
+        addedCount += s.questions.length;
+        setsCount++;
+      });
+    }
+
+    saveCustomSets();
+    renderSetCheckboxes();
+    renderTargetSetSelect();
+    updateQuestionsFromActiveSets();
+
+    statusMsg.style.display = 'block';
+    statusMsg.style.color = '#2d8a55';
+    statusMsg.innerHTML = `🎉 <b>นำเข้าสำเร็จ!</b> สร้างชุดคำถามใหม่ ${setsCount} ชุด รวมทั้งหมด ${addedCount} ข้อ ข้อมูลถูกบันทึกและติ๊กพร้อมเล่นทันที!`;
+  });
+}
+
 resetAnswerForm();
 renderTargetSetSelect();
 renderSetCheckboxes();
